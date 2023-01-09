@@ -362,10 +362,15 @@ impl<'de> OwnedDeserializer<'de> {
 
         for _ in 0..len {
             if let Node::String(key) = unsafe { self.de.next_() } {
+                #[cfg(feature = "key-to-lowercase")]
+                let k = key.to_ascii_lowercase();
+                #[cfg(not(feature = "key-to-lowercase"))]
+                let k = key.to_string();
+
                 #[cfg(not(feature = "value-no-dup-keys"))]
-                res.insert_nocheck(key.into(), self.parse());
+                res.insert_nocheck(k, self.parse());
                 #[cfg(feature = "value-no-dup-keys")]
-                res.insert(key.into(), self.parse());
+                res.insert(k, self.parse());
             } else {
                 unreachable!();
             }

@@ -57,6 +57,8 @@ value-no-dup-keys = []
 # Support for 128 bit integers
 128bit = ["value-trait/128bit"]
 
+key-to-lowercase = []
+
 # used for enabeling known keys in favour of a slower
 # hasher that is not protected against hash collision
 # attacks

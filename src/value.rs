@@ -83,7 +83,7 @@ pub use value_trait::*;
 pub fn deserialize<'de, Value, Key>(s: &'de mut [u8]) -> Result<Value>
 where
     Value: Builder<'de> + From<Vec<Value>> + From<HashMap<Key, Value>> + 'de,
-    Key: Hash + Eq + From<&'de str>,
+    Key: Hash + Eq + From<&'de str> + From<String>,
 {
     match Deserializer::from_slice(s) {
         Ok(de) => Ok(ValueDeserializer::from_deserializer(de).parse()),
@@ -94,7 +94,7 @@ where
 struct ValueDeserializer<'de, Value, Key>
 where
     Value: Builder<'de> + From<Vec<Value>> + From<HashMap<Key, Value>> + 'de,
-    Key: Hash + Eq + From<&'de str>,
+    Key: Hash + Eq + From<&'de str> + From<String>,
 {
     de: Deserializer<'de>,
     _marker: PhantomData<(Value, Key)>,
@@ -103,7 +103,7 @@ where
 impl<'de, Value, Key> ValueDeserializer<'de, Value, Key>
 where
     Value: Builder<'de> + From<&'de str> + From<Vec<Value>> + From<HashMap<Key, Value>> + 'de,
-    Key: Hash + Eq + From<&'de str>,
+    Key: Hash + Eq + From<&'de str> + From<String>,
 {
     pub fn from_deserializer(de: Deserializer<'de>) -> Self {
         Self {
@@ -146,10 +146,15 @@ where
         // element so we eat this
         for _ in 0..len {
             if let Node::String(key) = unsafe { self.de.next_() } {
+                #[cfg(feature = "key-to-lowercase")]
+                let k = Key::from(key.to_ascii_lowercase());
+                #[cfg(not(feature = "key-to-lowercase"))]
+                let k = Key::from(key);
+
                 #[cfg(not(feature = "value-no-dup-keys"))]
-                res.insert_nocheck(key.into(), self.parse());
+                res.insert_nocheck(k, self.parse());
                 #[cfg(feature = "value-no-dup-keys")]
-                res.insert(key.into(), self.parse());
+                res.insert(k, self.parse());
             } else {
                 unreachable!();
             }
