@@ -425,6 +425,9 @@ impl<'de> BorrowDeserializer<'de> {
         // element so we eat this
         for _ in 0..len {
             if let Node::String(key) = unsafe { self.0.next_() } {
+                #[cfg(feature = "key-to-lowercase")]
+                let key = key.to_ascii_lowercase();
+
                 #[cfg(not(feature = "value-no-dup-keys"))]
                 res.insert_nocheck(key.into(), self.parse());
                 #[cfg(feature = "value-no-dup-keys")]
@@ -1050,5 +1053,15 @@ mod test {
         let v: Option<u8> = Some(42);
         let v: Value = v.into();
         assert_eq!(v, 42);
+    }
+
+    #[cfg(feature = "key-to-lowercase")]
+    #[test]
+    fn test_key_to_lowercase() {
+        let mut data = br#"{"A": 1}"#.to_vec();
+        let ret = crate::to_borrowed_value(&mut data);
+        assert!(ret.is_ok());
+        let v = ret.unwrap();
+        assert_eq!(v.get_i32("a"), Some(1));
     }
 }
