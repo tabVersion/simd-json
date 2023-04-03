@@ -619,7 +619,6 @@ impl<'de> Deserializer<'de> {
             tmpbuf
                 .as_mut_ptr()
                 .copy_from(input.as_ptr().add(idx), len - idx);
-
             utf8_validator.update_from_chunks(&tmpbuf);
 
             let input = SimdInput::new(&tmpbuf);
@@ -1826,6 +1825,12 @@ mod tests_serde {
         println!("Des {des:?}");
         assert_eq!(thing, des);
         Ok(())
+    }
+
+    #[test]
+    fn invalid_float() {
+        let mut s: Vec<u8> = b"[100,9e999]".to_vec();
+        assert!(to_owned_value(&mut s).is_err());
     }
 
     #[cfg(not(target_arch = "wasm32"))]
